@@ -1,0 +1,41 @@
+Partie 2 : Le Lien pour Tester sur d'Autres Navigateurs
+Le lien que vous utilisez actuellement est probablement C:\Users\ASUS\Desktop\TestAPI\site\index.html. Ce lien ne fonctionne que sur votre ordinateur car il pointe vers un fichier local.
+Pour tester sur un autre navigateur sur le MÊME ORDINATEUR, vous pouvez simplement copier-coller ce lien.
+MAIS, pour que le bot soit accessible depuis un autre appareil (comme votre téléphone) sur le même réseau Wi-Fi, il faut faire une petite manipulation.
+Comment trouver le lien de votre bot sur votre réseau local :
+Trouvez l'adresse IP de votre ordinateur :
+Ouvrez l'Invite de Commandes (CMD).
+Tapez la commande : ipconfig
+Cherchez la ligne qui commence par "Adresse IPv4". Elle ressemblera à 192.168.1.XX (où XX est un nombre). C'est l'adresse de votre ordinateur sur votre réseau Wi-Fi.
+Lancez le serveur sur cette adresse :
+Arrêtez le serveur Uvicorn avec CTRL + C.
+Relancez-le avec une nouvelle option, --host. Remplacez VOTRE_IP par l'adresse que vous venez de trouver.
+Generated cmd
+uvicorn serveur_api:app --reload --host VOTRE_IP
+Use code with caution.
+Cmd
+Exemple : uvicorn serveur_api:app --reload --host 192.168.1.15
+Modifiez le lien dans le fichier index.html :
+Ouvrez notepad site\index.html.
+Trouvez la ligne JavaScript (vers la fin) :
+Generated javascript
+const response = await fetch('http://127.0.0.1:8000/chat', {
+Use code with caution.
+JavaScript
+Remplacez 127.0.0.1 par l'adresse IP de votre ordinateur :
+Generated javascript
+const response = await fetch('http://VOTRE_IP:8000/chat', {
+Use code with caution.
+JavaScript
+Exemple : const response = await fetch('http://192.168.1.15:8000/chat', {
+Enregistrez le fichier.
+Le Lien Magique :
+Le lien pour accéder à votre bot depuis n'importe quel appareil sur le même Wi-Fi (un autre ordinateur, votre téléphone, une tablette) est maintenant :
+http://VOTRE_IP:8000/docs (pour voir l'API)
+... et pour le widget, il faudra ouvrir le fichier index.html sur l'appareil ou, mieux, le servir via une simple commande Python.
+Pour servir le fichier index.html sur le réseau :
+Ouvrez une deuxième CMD.
+Allez dans le dossier TestAPI/site.
+Lancez un simple serveur web Python : python -m http.server 8080
+Le lien du widget sera alors : http://VOTRE_IP:8080
+Vous pouvez maintenant envoyer ce lien à votre téléphone et tester votre bot depuis un autre appareil

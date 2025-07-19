@@ -1,0 +1,20 @@
+[
+  {
+    "id": "PROD001",
+    "nom": "Smartphone 'Photon X'",
+    "description": "Un smartphone dernière génération avec un appareil photo de 108 MP et un écran Super AMOLED.",
+    "prix": 350000,
+    "devise": "XOF",
+    "stock": 15,
+    "mots_cles": ["téléphone", "smartphone", "photon", "photo"]
+  },
+  {
+    "id": "PROD002",
+    "nom": "Écouteurs 'SoundWave'",
+    "description": "Écouteurs sans fil avec réduction de bruit active et 24h d'autonomie.",
+    "prix": 45000,
+    "devise": "XOF",
+    "stock": 50,
+    "mots_cles": ["écouteurs", "casque", "audio", "musique", "soundwave"]
+  }
+]

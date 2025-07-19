@@ -1,0 +1,363 @@
+Absolument. C'est une excellente idée de faire une synthèse pour consolider notre travail et définir clairement la suite.
+
+---
+
+### **Synthèse du Projet "Pack Complet IA pour E-Commerce"**
+
+**Objectif Initial :** Créer un système d'IA complet pour automatiser la vente, le support et le marketing d'une boutique en ligne.
+
+**Statut Actuel :** **Mission Accomplie.** Nous avons développé et validé un prototype fonctionnel robuste (MVP - Minimum Viable Product) qui constitue le cœur technologique du projet.
+
+**Architecture Finale :**
+*   **Serveur Principal (`serveur_api.py`) :** Une API Web basée sur FastAPI, capable de gérer des conversations multi-utilisateurs en temps réel grâce à un système de sessions.
+*   **Cerveau IA (`agents/agent_principal.py`) :** Un agent conversationnel unique et surpuissant, propulsé par Google Gemini, qui possède de multiples compétences :
+    *   **Support Client :** Répond aux questions en se basant sur un catalogue produit et une FAQ.
+    *   **Vendeur :** Détecte l'intention d'achat, gère les hésitations avec des offres spéciales, et mémorise les produits en discussion.
+    *   **Collecteur de Données :** Mène un dialogue pour obtenir les informations de commande (Nom, Prénom, Téléphone, Adresse).
+*   **Base de Données (`crm/prospects.json`) :** Un mini-CRM qui stocke les informations des clients qualifiés, incluant le produit commandé et un statut.
+*   **Outil Marketing (`lancer_marketing.py`) :** Un script autonome qui lit le CRM et utilise l'IA pour générer des messages de relance personnalisés.
+*   **Interface de Test (`site/index.html`) :** Un widget de chat web fonctionnel qui permet d'interagir avec l'API, validant la connexion "frontend-backend".
+
+**Technologies Utilisées :**
+*   **Langage :** Python
+*   **Serveur Web :** FastAPI & Uvicorn
+*   **Cerveau IA :** API Google Gemini (modèle `gemini-2.5-flash`)
+*   **Interface :** HTML, CSS, JavaScript
+
+---
+
+### **Prochains Objectifs à Réaliser**
+
+Maintenant que le "cerveau" est prêt, les prochaines étapes consistent à lui donner des "canaux" pour interagir avec le monde réel et à le déployer.
+
+**Objectif 1 : Déploiement en Ligne (Le Prérequis)**
+*   **Action :** Déployer le serveur FastAPI sur une plateforme d'hébergement en ligne (comme **Heroku**, **Render**, ou un **VPS**).
+*   **Pourquoi :** Pour que des services comme WhatsApp ou Facebook puissent envoyer des messages à votre bot, celui-ci doit avoir une adresse internet publique (une URL), et non plus `http://127.0.0.1:8000`.
+*   **Difficulté :** Moyenne. Nécessite de se familiariser avec les plateformes de déploiement.
+
+**Objectif 2 : Connecteur WhatsApp (La Plus Forte Valeur Ajoutée)**
+*   **Action :**
+    1.  Choisir un partenaire API WhatsApp Business (ex: **Twilio**).
+    2.  Configurer un numéro et un "Webhook" sur la plateforme du partenaire, en pointant vers l'URL publique de votre serveur (obtenue à l'Objectif 1).
+    3.  Adapter `serveur_api.py` pour qu'il puisse recevoir et répondre au format spécifique des messages WhatsApp envoyés par le partenaire.
+*   **Pourquoi :** C'est le canal de communication le plus direct et le plus utilisé par les clients dans de nombreuses régions.
+*   **Difficulté :** Moyenne à Élevée.
+
+**Objectif 3 : Intégration sur un Site Web / Shopify (La Plus Rapide)**
+*   **Action :**
+    1.  Modifier le fichier `index.html` pour que l'URL du `fetch` pointe vers l'adresse publique de votre serveur.
+    2.  Copier-coller le code du widget (HTML, CSS, JavaScript) dans le thème d'une boutique Shopify ou sur n'importe quelle page web.
+*   **Pourquoi :** C'est le moyen le plus rapide de mettre votre bot en production et de le faire interagir avec de vrais visiteurs.
+*   **Difficulté :** Faible.
+
+**Objectif 4 : Connecteurs pour les Réseaux Sociaux (Facebook, Telegram, etc.)**
+*   **Action :** Le principe est le même que pour WhatsApp. Pour chaque plateforme, il faut créer une application "développeur", obtenir des clés API, et configurer un Webhook pointant vers un nouveau point d'entrée (endpoint) sur votre serveur.
+*   **Pourquoi :** Pour toucher les clients là où ils se trouvent.
+*   **Difficulté :** Moyenne.
+
+---
+
+### **Sauvegarde des Fichiers Essentiels**
+
+Pour pouvoir poursuivre ce projet n'importe où, voici la liste et le code des fichiers finaux et validés.
+
+**Structure des Fichiers à Sauvegarder :**
+```
+TestAPI/
+├── agents/
+│   └── agent_principal.py
+├── config/
+│   ├── faq.txt
+│   └── produits.json
+├── crm/
+│   └── prospects.json
+├── site/
+│   └── index.html
+├── lancer_marketing.py
+└── serveur_api.py
+```
+
+**Code des Fichiers Clés :**
+
+<details>
+<summary><code>agents/agent_principal.py</code></summary>
+
+```python
+# agents/agent_principal.py (Version Élite)
+import google.generativeai as genai
+import json, os, datetime
+
+HOME_DIR = os.path.expanduser("~")
+CRM_DIR = os.path.join(HOME_DIR, 'Desktop', 'crm')
+CRM_FILE = os.path.join(CRM_DIR, 'prospects.json')
+
+def sauvegarder_contact(infos):
+    contacts = []
+    os.makedirs(os.path.dirname(CRM_FILE), exist_ok=True)
+    try:
+        with open(CRM_FILE, 'r', encoding='utf-8') as f: contacts = json.load(f)
+    except: pass
+    contacts.append(infos)
+    with open(CRM_FILE, 'w', encoding='utf-8') as f: json.dump(contacts, f, indent=4, ensure_ascii=False)
+    print("DEBUG: Prospect sauvegardé dans le CRM.")
+
+def charger_connaissance():
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    faq_path = os.path.join(base_dir, 'config', 'faq.txt')
+    produits_path = os.path.join(base_dir, 'config', 'produits.json')
+    faq, produits = "Aucune FAQ.", []
+    try:
+        with open(faq_path, 'r', encoding='utf-8') as f: faq = f.read()
+    except: pass
+    try:
+        with open(produits_path, 'r', encoding='utf-8') as f: produits = json.load(f)
+    except: pass
+    return faq, produits
+
+class AgentPrincipal:
+    def __init__(self, api_key):
+        genai.configure(api_key=api_key)
+        faq, self.catalogue_produits = charger_connaissance()
+        self.produit_contexte = None
+        self.prompt_systeme = f"""
+        Tu es un assistant IA vendeur expert pour 'ViteFait.sn'.
+        --- CONNAISSANCE ---
+        FAQ: {faq}
+        CATALOGUE: {json.dumps(self.catalogue_produits, indent=2, ensure_ascii=False)}
+        --- RÈGLES ---
+        1.  **Petites Discussions:** Si c'est une salutation/politesse, réponds brièvement.
+        2.  **Questions:** Utilise la CONNAISSANCE. Si tu ne sais pas, propose le contact +2250749522365.
+        3.  **Hésitation:** Si le client hésite sur le prix, propose la livraison gratuite pour la première commande.
+        4.  **Intention d'achat:** Si le client veut commander, passe en mode collecte.
+        5.  **Collecte:** Demande NOM, PRÉNOM, TÉLÉPHONE, ADRESSE en une seule fois.
+        6.  **Sauvegarde:** Après la réponse du client, analyse-la et réponds UNIQUEMENT avec un JSON.
+            - Le JSON doit avoir la structure : {{"action": "sauvegarder_prospect", "data": {{"nom": "...", "prenom": "...", "telephone": "...", "adresse_livraison": "...", "produit_commande": "..."}}}}.
+            - **IMPORTANT :** Pour "produit_commande", tu dois mettre le nom du produit dont le client parlait juste avant de vouloir commander.
+        """
+        self.model = genai.GenerativeModel("gemini-2.5-flash", system_instruction=self.prompt_systeme)
+        self.chat = self.model.start_chat(history=[])
+
+    def extraire_json(self, txt):
+        try:
+            start = txt.find('{'); end = txt.rfind('}')
+            if start != -1 and end != -1: return json.loads(txt[start:end+1])
+            return None
+        except: return None
+
+    def repondre(self, requete_client):
+        for produit in self.catalogue_produits:
+            if produit["nom"].lower() in requete_client.lower():
+                self.produit_contexte = produit["nom"]
+                print(f"DEBUG: Produit mis en contexte -> {self.produit_contexte}")
+        requete_pour_ia = f"PRODUIT ACTUELLEMENT EN DISCUSSION : {self.produit_contexte}\n\nMESSAGE DU CLIENT : {requete_client}"
+        try:
+            reponse_api = self.chat.send_message(requete_pour_ia).text
+            action_json = self.extraire_json(reponse_api)
+            if action_json and action_json.get("action") == "sauvegarder_prospect":
+                prospect_data = action_json.get("data", {})
+                if prospect_data.get("nom") and prospect_data.get("prenom"):
+                    prospect_data["date"] = datetime.datetime.now().isoformat()
+                    prospect_data["statut"] = "chaud"
+                    prospect_data["produit_commande"] = self.produit_contexte or "non spécifié"
+                    sauvegarder_contact(prospect_data)
+                    self.produit_contexte = None
+                    return "Parfait, merci ! Vos informations ont été enregistrées. Un conseiller vous contactera."
+                else:
+                    return "Merci. Il manque des informations. Un conseiller essaiera de vous joindre."
+            return reponse_api
+        except Exception as e:
+            print(f"ERREUR [AgentPrincipal]: {e}"); return "Désolé, une erreur technique est survenue."
+```
+</details>
+
+<details>
+<summary><code>serveur_api.py</code></summary>
+
+```python
+# serveur_api.py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import sys, uuid
+from agents.agent_principal import AgentPrincipal
+
+# --- CONFIGURATION ---
+API_KEY = "VOTRE_CLE_API_GOOGLE"
+
+app = FastAPI(title="SmartEcom360 API")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+if "VOTRE_CLE" in API_KEY:
+    print("ERREUR : CLÉ API MANQUANTE"); sys.exit()
+
+conversations_en_cours = {}
+
+class MessageEntrant(BaseModel):
+    id_session: str | None = None
+    texte: str
+class ReponseAgent(BaseModel):
+    id_session: str
+    texte: str
+
+@app.post("/chat", response_model=ReponseAgent)
+async def recevoir_message(message: MessageEntrant):
+    id_session = message.id_session
+    if not id_session or id_session not in conversations_en_cours:
+        id_session = str(uuid.uuid4())
+        print(f"\n[API] Nouvelle session démarrée : {id_session}")
+        conversations_en_cours[id_session] = AgentPrincipal(api_key=API_KEY)
+    agent_instance = conversations_en_cours[id_session]
+    print(f"[API] Message de '{id_session}': '{message.texte}'")
+    reponse_texte = agent_instance.repondre(message.texte)
+    print(f"[API] Réponse pour '{id_session}': '{reponse_texte}'")
+    return ReponseAgent(id_session=id_session, texte=reponse_texte)
+
+@app.get("/")
+def racine(): return {"status": "ok"}
+```
+</details>
+
+<details>
+<summary><code>lancer_marketing.py</code></summary>
+
+```python
+# lancer_marketing.py
+import sys, json, os, google.generativeai as genai
+
+HOME_DIR = os.path.expanduser("~")
+CRM_DIR = os.path.join(HOME_DIR, 'Desktop', 'crm')
+CRM_FILE = os.path.join(CRM_DIR, 'prospects.json')
+API_KEY = "VOTRE_CLE_API_GOOGLE"
+
+class AgentMarketing:
+    def __init__(self, api_key):
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel(model_name="gemini-2.5-flash")
+    def charger_prospects(self):
+        if not os.path.exists(CRM_FILE): return []
+        try:
+            with open(CRM_FILE, 'r', encoding='utf-8') as f: return json.load(f) or []
+        except: return []
+    def lancer_campagne_relance_ia(self):
+        print("\n--- Lancement de la Campagne Marketing par IA ---")
+        prospects = self.charger_prospects()
+        prospects_a_relancer = [p for p in prospects if p.get("prenom")]
+        if not prospects_a_relancer:
+            print("Aucun prospect qualifié à relancer.")
+            return
+        print(f"Préparation de messages pour {len(prospects_a_relancer)} prospect(s)...")
+        for prospect in prospects_a_relancer:
+            prenom = prospect.get('prenom')
+            produit = prospect.get('produit_commande', 'votre dernière discussion')
+            print(f"\nPréparation du message pour : {prenom}...")
+            prompt = f"Tu es un marketeur. Écris un message de relance WhatsApp court et amical pour {prenom} qui a commandé '{produit}'. Signe 'L'équipe ViteFait.sn'."
+            reponse = self.model.generate_content(prompt)
+            print(f"--- MSG pour {prenom} ---\n{reponse.text.strip()}\n----------------------")
+        print("\n--- Campagne terminée. ---")
+
+def main():
+    print("="*50 + "\n   OUTIL DE CAMPAGNE MARKETING\n" + "="*50)
+    if "VOTRE_CLE" in API_KEY:
+        print("\nERREUR : CLÉ API MANQUANTE")
+        input("Appuyez sur Entrée pour quitter.")
+        return
+    try:
+        agent = AgentMarketing(api_key=API_KEY)
+        agent.lancer_campagne_relance_ia()
+    except Exception as e:
+        print(f"\nERREUR FATALE: {e}")
+    input("\nAppuyez sur Entrée pour fermer.")
+
+if __name__ == "__main__":
+    main()
+```
+</details>
+
+<details>
+<summary><code>site/index.html</code></summary>
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boutique de Démo</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; }
+        .container { max-width: 800px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; }
+        #chat-bubble { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background-color: #007bff; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        #chat-widget { display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; height: 500px; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); flex-direction: column; }
+        .chat-header { background-color: #007bff; color: white; padding: 15px; font-weight: bold; text-align: center; border-radius: 15px 15px 0 0; }
+        .chat-body { flex-grow: 1; padding: 10px; overflow-y: auto; }
+        .chat-footer { padding: 10px; display: flex; border-top: 1px solid #ddd; }
+        #chat-input { flex-grow: 1; border: 1px solid #ccc; border-radius: 20px; padding: 10px; }
+        #send-btn { background: #007bff; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; margin-left: 10px; cursor: pointer; }
+        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 18px; max-width: 80%; line-height: 1.4; }
+        .user-message { background-color: #007bff; color: white; align-self: flex-end; margin-left: auto; }
+        .bot-message { background-color: #e9e9eb; color: black; align-self: flex-start; }
+        .chat-body-inner { display: flex; flex-direction: column; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bienvenue sur notre Boutique !</h1>
+        <p>Cliquez sur la bulle pour parler à notre assistant IA.</p>
+    </div>
+    <div id="chat-bubble">💬</div>
+    <div id="chat-widget">
+        <div class="chat-header">Assistant Virtuel</div>
+        <div class="chat-body"><div class="chat-body-inner">
+            <div class="message bot-message">Bonjour ! Comment puis-je vous aider ?</div>
+        </div></div>
+        <div class="chat-footer">
+            <input type="text" id="chat-input" placeholder="Tapez votre message..."><button id="send-btn">➤</button>
+        </div>
+    </div>
+    <script>
+        const chatBubble = document.getElementById('chat-bubble');
+        const chatWidget = document.getElementById('chat-widget');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const chatBody = document.querySelector('.chat-body-inner');
+        let sessionId = sessionStorage.getItem('chat_session_id');
+        chatBubble.addEventListener('click', () => {
+            chatWidget.style.display = chatWidget.style.display === 'none' ? 'flex' : 'none';
+        });
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => e.key === 'Enter' && sendMessage());
+        function addMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+            msgDiv.textContent = text;
+            chatBody.appendChild(msgDiv);
+            chatBody.parentElement.scrollTop = chatBody.parentElement.scrollHeight;
+        }
+        async function sendMessage() {
+            const userText = chatInput.value.trim();
+            if (userText === '') return;
+            addMessage(userText, 'user');
+            chatInput.value = '';
+            const requestBody = { texte: userText };
+            if (sessionId) { requestBody.id_session = sessionId; }
+            try {
+                const response = await fetch('http://127.0.0.1:8000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody),
+                });
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+                const data = await response.json();
+                sessionId = data.id_session;
+                sessionStorage.setItem('chat_session_id', sessionId);
+                addMessage(data.texte, 'bot');
+            } catch (error) {
+                console.error('Erreur API:', error);
+                addMessage('Désolé, une erreur de connexion est survenue.', 'bot');
+            }
+        }
+    </script>
+</body>
+</html>
+```
+</details>
